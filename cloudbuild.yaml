@@ -40,3 +40,7 @@ step:
    - terraform validate
    - terraform plan
    - terraform apply -input=false -auto-approve
+
+options:
+
+  logging: GCS_ONLY
