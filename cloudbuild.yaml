@@ -1,3 +1,16 @@
+substitution:
+
+#_DEFAULT_REGION-docker.pkg.dev/$PROJECT_ID/$_GAR_REPOSITORY/terraform
+_DEFAULT_REGION: northamerica-northeast1-a
+
+_PROJECT_ID: praxis-water-391016
+_REPO_URL: https://github.com/kralagonda/cloudbuild.git
+_TF_SA_EMAIL: testbuild@praxis-water-391016.iam.gserviceaccount.com
+
+
+
+
+
 # Access the id_github file from Secret Manager, and setup SSH
 steps:
 - name: 'gcr.io/cloud-builders/git'
@@ -20,6 +33,7 @@ steps:
 
 # Clone the repository
 - name: 'gcr.io/cloud-builders/git'
+  entrypoint: /bin/bash 
   args:
   - clone
   - --recurse-submodules
@@ -28,31 +42,32 @@ steps:
   - name: 'ssh'
     path: /root/.ssh
 
-availableSecrets:
-  secretManager:
-  - versionName: projects/praxis-water-391016/secrets/kr_cloudbuild/versions/latest
-    env: 'SSH_KEY'
+  availableSecrets:
+    secretManager:
+    - versionName: projects/praxis-water-391016/secrets/kr_cloudbuild/versions/latest
+      env: 'SSH_KEY'
 
-  - id: 'tf plan'
-    name: 'hashicorp/terraform:1.0.7'
-    entrypoint: 'sh'
-    args: 
-    - '-c'
-    - | 
-       if [ -d "cloudbuild/$BRANCH_NAME/" ]; then
-          cd environments/$BRANCH_NAME
-          terraform plan
-        else
-         for dir in cloudbuild/*/
-         do 
-          cd ${dir}   
-          env=${dir%*/}
-          env=${env#*/}  
-          echo ""
-          echo "*************** TERRAFOM PLAN ******************"
-          echo "******* At environment: ${env} ********"
-          echo "*************************************************"
-          terraform plan || exit 1
-          cd ../../
-        done
-       fi 
+step:
+- id: 'setup'
+  name: $_DEFAULT_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO_URL/terraform
+  entrypoint: /bin/bash
+  args:
+    - "-eEuo"
+    - "pipefail"
+    - -c
+    - |
+      tf_sa_email=${_TF_SA_EMAIL}
+      if [[ -n ${tf_sa_email} ]]; then
+        echo "Setting up gcloud for impersonation"
+        gcloud config set auth/impersonate_service_account $tf_sa_email
+      fi
+
+- id: 'tf-plan'
+  name: $_DEFAULT_REGION-docker.pkg.dev/$PROJECT_ID/$_REPO_URL/terraform
+  entrypoint: /bin/bash
+  args:
+    - "-eEuo"
+    - "pipefail"
+    - -c
+    - |
+       
