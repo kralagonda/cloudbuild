@@ -33,13 +33,91 @@ availableSecrets:
   - versionName: projects/praxis-water-391016/secrets/kr_cloudbuild/versions/latest
     env: 'SSH_KEY'
 
-step:
-  image: hashicorp/terraform:full
-  script:
-   - terraform init #-backend-config="access_key=$AWS_ACCESS_KEY_ID" -backend-config="secret_key=$AWS_SECRET_ACCESS_KEY"
-   - terraform validate
-   - terraform plan
-   - terraform apply -input=false -auto-approve
+
+  steps:
+
+  - name: 'hashicorp/terraform:1.0.7'
+
+    dir: workingdir/cloudbuild/bucket
+
+    args:
+
+      - '-c'
+
+      - |
+
+        terraform init
+
+    id: terraform init
+
+    entrypoint: sh
+
+  - name: 'hashicorp/terraform:1.0.7'
+
+    dir: workingdir/cloudbuild/bucket
+
+    args:
+
+      - '-c'
+
+      - |
+
+        terraform fmt
+
+    id: terraform fmt
+
+    entrypoint: sh
+
+  - name: 'hashicorp/terraform:1.0.7'
+
+    dir: workingdir/cloudbuild/bucket
+
+    args:
+
+      - '-c'
+
+      - |
+
+        terraform validate
+
+    id: terraform validate
+
+    entrypoint: sh
+
+  - name: 'hashicorp/terraform:1.0.7'
+
+    dir: workingdir/cloudbuild/bucket
+
+    args:
+
+      - '-c'
+
+      - |
+
+        terraform plan
+
+    id: terraform plan
+
+    entrypoint: sh
+
+  - name: 'hashicorp/terraform:1.0.7'
+
+    dir: workingdir/cloudbuild/bucket
+
+    args:
+
+      - '-c'
+
+      - |
+
+        terraform apply -input=false -auto-approve
+
+    id: terraform apply
+
+    entrypoint: sh
+
+logsBucket: 'gs://praxis-water-391016-tfstate'
 
 options:
+
   logging: GCS_ONLY
