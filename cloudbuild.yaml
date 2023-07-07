@@ -33,91 +33,26 @@ availableSecrets:
   - versionName: projects/praxis-water-391016/secrets/kr_cloudbuild/versions/latest
     env: 'SSH_KEY'
 
-
-  steps:
-
-  - name: 'hashicorp/terraform:1.0.7'
-
-    dir: workingdir/cloudbuild/bucket
-
-    args:
-
-      - '-c'
-
-      - |
-
-        terraform init
-
-    id: terraform init
-
-    entrypoint: sh
-
-  - name: 'hashicorp/terraform:1.0.7'
-
-    dir: workingdir/cloudbuild/bucket
-
-    args:
-
-      - '-c'
-
-      - |
-
-        terraform fmt
-
-    id: terraform fmt
-
-    entrypoint: sh
-
-  - name: 'hashicorp/terraform:1.0.7'
-
-    dir: workingdir/cloudbuild/bucket
-
-    args:
-
-      - '-c'
-
-      - |
-
-        terraform validate
-
-    id: terraform validate
-
-    entrypoint: sh
-
-  - name: 'hashicorp/terraform:1.0.7'
-
-    dir: workingdir/cloudbuild/bucket
-
-    args:
-
-      - '-c'
-
-      - |
-
-        terraform plan
-
-    id: terraform plan
-
-    entrypoint: sh
-
-  - name: 'hashicorp/terraform:1.0.7'
-
-    dir: workingdir/cloudbuild/bucket
-
-    args:
-
-      - '-c'
-
-      - |
-
-        terraform apply -input=false -auto-approve
-
-    id: terraform apply
-
-    entrypoint: sh
-
-logsBucket: 'gs://praxis-water-391016-tfstate'
-
-options:
-
-  logging: GCS_ONLY
+  - id: 'tf plan'
+    name: 'hashicorp/terraform:1.0.7'
+    entrypoint: 'sh'
+    args: 
+    - '-c'
+    - | 
+       if [ -d "cloudbuild/$BRANCH_NAME/" ]; then
+          cd environments/$BRANCH_NAME
+          terraform plan
+        else
+         for dir in cloudbuild/*/
+         do 
+          cd ${dir}   
+          env=${dir%*/}
+          env=${env#*/}  
+          echo ""
+          echo "*************** TERRAFOM PLAN ******************"
+          echo "******* At environment: ${env} ********"
+          echo "*************************************************"
+          terraform plan || exit 1
+          cd ../../
+        done
+       fi 
